@@ -105,7 +105,10 @@ export default {
                                 vulnFile = JSON.parse(fileReader.result);
                                 if (typeof vulnFile === 'object') {
                                     if (Array.isArray(vulnFile)) {
-                                        this.vulnerabilities = vulnFile;
+                                        if (vulnFile.length > 0 && vulnFile[0].id)
+                                            this.vulnerabilities = this.parseSerpico(vulnFile);
+                                        else
+                                            this.vulnerabilities = vulnFile;
                                     }
                                     else
                                         this.vulnerabilities.push(vulnFile);
@@ -135,6 +138,64 @@ export default {
                     fileReader.readAsText(file);
                 })(files[i])
             }
+        },
+
+        parseSerpico: function(vulnerabilities) {
+            var result = [];
+            vulnerabilities.forEach(vuln => {
+                var tmpVuln = {};
+                tmpVuln.cvssv3 = vuln.c3_vs || null;
+                tmpVuln.cvssScore = vuln.cvss_base_score || null;
+                tmpVuln.cvssSeverity = vuln.severity || null;
+                tmpVuln.priority = null;
+                tmpVuln.remediationComplexity = null;
+                tmpVuln.references = this.formatSerpicoText(vuln.references);
+                var details = {};
+                details.locale = this.formatSerpicoText(vuln.language);
+                details.title = this.formatSerpicoText(vuln.title);
+                details.vulnType = this.formatSerpicoText(vuln.type);
+                details.description = this.formatSerpicoText(vuln.overview);
+                details.observation = this.formatSerpicoText(vuln.poc);
+                details.remediation = this.formatSerpicoText(vuln.remediation);
+                tmpVuln.details = [details];
+                
+                result.push(tmpVuln);
+            });
+            
+            return result;
+        },
+
+        formatSerpicoText: function(str) {
+            if (str === null) return null
+            if (str === 'English') return 'en'
+            if (str === 'French') return 'fr'
+
+            var res = str
+            // Replace the paragraph tags and simply add linebreaks
+            res = res.replace(/<paragraph>/g, '')
+            res = res.replace(/<\/paragraph>/g, '\n')
+            // First level bullets
+            res = res.replace(/<bullet>/g, '* ')
+            res = res.replace(/<\/bullet>/g, '')
+            // Nested bullets
+            res = res.replace(/<bullet1>/g, '    * ')
+            res = res.replace(/<\/bullet1>/g, '')
+            // Headers (used as bold in Serpico)
+            res = res.replace(/<h4>/g, '')
+            res = res.replace(/<\/h4>/g, '')
+            // Indented text
+            res = res.replace(/<indented>/g, '    ')
+            res = res.replace(/<\/indented>/g, '')
+            // Italic
+            res = res.replace(/<italics>/g, '')
+            res = res.replace(/<\/italics>/g, '')
+            // Code
+            res = res.replace(/\[\[\[/g, '\n')
+            res = res.replace(/]]]/g, '\n')
+            // Apostroph
+            res = _.unescape(res)
+
+            return res
         },
 
         downloadVulnerabilities: function() {
