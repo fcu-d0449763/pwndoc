@@ -28,6 +28,15 @@
                 <q-toggle label="Valid" v-model="search.valid" :true-value=0 />
                 <q-toggle label="New" color="light-blue" v-model="search.new" :true-value=1 />
                 <q-toggle label="Updates" color="orange" v-model="search.updates" :true-value=2 />
+                <q-btn 
+                    v-if="UserService.isAdmin()"
+                    class="q-ml-md"
+                    color="secondary" 
+                    no-caps
+                    @click="$refs.mergeModal.show()"
+                    >
+                    Merge Vulnerabilities
+                </q-btn>  
                 <q-space />
                 <q-btn 
                     v-if="UserService.isAdmin()"
@@ -638,6 +647,49 @@
             </q-page>
         </q-page-container>
     </q-layout>
-            
-    </q-dialog>
+</q-dialog>
+
+<q-dialog persistent ref="mergeModal">
+    <q-card  style="width: 1000px; max-width: 1000px;">
+        <q-bar class="bg-primary text-white">
+            <span>Merge Vulnerabilities</span>
+            <q-space />
+            <q-btn dense flat icon="close" @click="$refs.mergeModal.hide()" />
+        </q-bar>
+
+        <div v-if="languages.length < 2">
+            <q-card-section>
+            The goal is to merge different vulnerabilities with different languages into the same vulnerabiliy.<br />
+            So a minimum of 2 Languages must exist.
+            </q-card-section>
+        </div>
+        <div v-else class="row">
+            <q-card-section class="col-md-6">
+                <q-select
+                label='Language'
+                stack-label
+                v-model="currentLanguage"
+                :options="languages"
+                option-value="locale"
+                option-label="language"
+                map-options
+                emit-value
+                />
+            </q-card-section>
+            <q-separator vertical />
+            <q-card-section class="col">
+                <q-select
+                label='Language'
+                stack-label
+                v-model="currentLanguage"
+                :options="languages"
+                option-value="locale"
+                option-label="language"
+                map-options
+                emit-value
+                />
+            </q-card-section>
+        </div>
+    </q-card>
+</q-dialog>
 </div>
